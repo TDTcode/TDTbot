@@ -89,6 +89,7 @@ roles = _Struct(
                 call_of_duty=1320268864080187423,
                 marvel_rivals=1320268692268908645,
                 deadlock=1324178731333324912,
+                artist=1385411116498157598,
                 )
 
 users = _Struct(electro=221778796250923008,
@@ -123,6 +124,7 @@ defaults = {
     'roast_file':      os.path.join(_config, 'roasts.txt'),
     'lore_file':       os.path.join(_config, 'lore.md'),
     'welcome_file':    os.path.join(_config, 'welcome.md'),
+    'art_file':        os.path.join(_config, 'art_atrium.md'),
     'nemeses':         [users.electro, users.wator, users.em],
     'add_bots':        [],
     'ignore_list':     ['lfg_pvp', 'lfg_pve', 'lenny_laboratory', 'manual_page',

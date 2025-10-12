@@ -3,7 +3,7 @@ from discord.ext import commands  # type: ignore
 import logging
 # from typing import Tuple
 from .. import param
-from ..param import messages, roles
+from ..param import messages, roles, rc
 from ..helpers import emotes_equal, find_channel
 from ..async_helpers import admin_check, split_send
 from ..version import usingV2
@@ -36,6 +36,20 @@ class MainCommands(commands.Cog):
         self.bot.enroll_emoji_role({'👍': "Wit Challengers"}, message_id=809302963990429757)
         self.bot.enroll_emoji_role({'🏆': "Tourney Challengers"}, message_id=822744897505067018)
         self.bot.enroll_emoji_role(param.emoji2role, message_id=param.messages.CoC)
+        try:
+            with open(rc('art_file'), 'r') as f:
+                msg = f.read()
+            accept = msg.split('`')[1].strip().lower()
+            for p in ".,?!;:":
+                accept = accept.replace(p, '')
+            self.bot.enroll_emoji_role({'🎨': param.roles.artist},
+                                       message_id=param.messages.CoC,
+                                       # Testing ##
+                                       # send_message=msg,
+                                       # accept_string='',
+                                       target=param.roles.artist)
+        except FileNotFoundError:
+            logger.warning("Cannot find art file for emoji role, skipping.")
         _roles = ['alpha', 'beta', 'gamma', 'omega']
         _dict = {i: i for i in _roles}
         self.bot.enroll_emoji_role(_dict, message_id=messages.wolfpack, remove=_roles, min_role='Recruit')

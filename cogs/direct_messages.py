@@ -5,7 +5,7 @@ import logging
 import os
 from .. import param
 from ..config import UserConfig
-from ..helpers import find_role, emotes_equal
+from ..helpers import find_role, emotes_equal, clean_string
 from ..async_helpers import admin_check, parse_payload, split_send
 from ..version import usingV2
 
@@ -185,6 +185,26 @@ class DirectMessages(commands.Cog):
             if message.author.id in config['ignore']:
                 return
             channel = self.bot.find_channel(param.rc('log_channel'))
+            # handel role assignment DMs
+            # needs testing
+            if False:
+                if message.author.id in self.bot._emoji_dm_targets:
+                    accept_string, target = self.bot._emoji_dm_targets[message.author.id]
+                    if accept_string.lower() == clean_string(message.content):
+                        role = find_role(channel.guild, target)
+                        member = await self.bot.get_or_fetch_user(message.author.id, guild=channel.guild)
+                        await member.add_roles(role)
+                        await message.reply("You have been assigned the `{}` role.".format(role.name))
+                        del self.bot._emoji_dm_targets[message.author.id]
+                        msg = f"{message.author.mention} has been assigned the `{role.name}` role."
+                        await channel.send(msg)
+                        return
+                    else:
+                        msg = f"The proper response of `{accept_string}` was not given."
+                        msg += "\nYou're message is being parsed as a normal DM to me and being forwarded to the moderation team."
+                        msg += f"\nIf you want to be assign role `{role.name}`, please try again by unreacting, then reacting to the message that triggered my previous DM to you."
+                        await message.reply(msg)
+                        del self.bot._emoji_dm_targets[message.author.id]
             if message.author.id == param.users.stellar:
                 roles = ['@' + find_role(channel.guild, i).name for i in ["devoted"]]
                 msg = '`' + ' '.join(roles) + '`\n'

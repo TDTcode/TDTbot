@@ -225,3 +225,8 @@ def delocalize(dt):
     if dt.tzinfo is None or dt.tzinfo.utcoffset(dt) is None:
         return dt
     return dt.astimezone(pytz.utc).replace(tzinfo=None)
+
+
+def clean_string(string):
+    """Remove all non-alphanumeric characters except spaces and underscores"""
+    return re.sub(r'[^\w\s]', '', string).strip().lower()

@@ -43,6 +43,8 @@ class MainBot(commands.Bot):
         kwargs['case_insensitive'] = True
         super().__init__(*args, **kwargs)
         self._emoji_role_data = []
+        self._emoji_dm_targets = {}
+        self._em
         self.usingV2 = usingV2
         # add all our cogs via load_extension
         if not usingV2:
@@ -184,18 +186,23 @@ class MainBot(commands.Bot):
 
     async def emoji2role(self, payload, emoji_dict, emoji=None, message_id=None,
                          member=None, guild=None, min_role=None, delete=False,
-                         remove=None):
+                         remove=None, send_message=None, accept_string=None,
+                         target=None):
         """Handle an emoji reaction"""
+        # ensure that the payload is valid
         if message_id is not None:
             if getattr(payload, "message_id") != message_id:
                 return
+        # get the author of the reaction
         author = getattr(getattr(payload, "member", None), "id", None)
         uid = getattr(payload, "user_id", None)
         debug = uid == param.users.stellar
+        # if the reaction is from the bot itself, ignore it
         if self.user.id in [author, uid]:
             if debug:
                 logger.info('emoji2role: self return')
             return
+        # make sure we have a guild and member
         if guild is None:
             guild = [g for g in self.guilds if g.id == payload.guild_id][0]
         if isinstance(guild, int):
@@ -204,6 +211,7 @@ class MainBot(commands.Bot):
             member = getattr(payload, "member")
             if member is None:
                 member = await self.get_or_fetch_user(payload.user_id, guild)
+        # check role requirements
         if min_role is not None and not delete:
             if not isinstance(min_role, discord.Role):
                 min_role = helpers.find_role(guild, min_role)
@@ -211,10 +219,12 @@ class MainBot(commands.Bot):
                 if debug:
                     logger.info('emoji2role: min_role return')
                 return
+        # get the emoji from the payload
         if emoji is None:
             emoji = payload.emoji
         if delete and debug:
             logger.info('Delete (rxn): {}\n{}'.format(emoji, payload))
+        # if member is None, we can't do anything, so log it
         if member is None:
             data = dict(payload=payload, emoji_dict=emoji_dict, emoji=emoji, message_id=message_id,
                         member=member, guild=guild, min_role=min_role, delete=delete, remove=remove)
@@ -224,6 +234,7 @@ class MainBot(commands.Bot):
             logger.info(msg)
         if debug:
             logger.info('emoji2role: {}\n\t\t{}'.format(emoji, emoji_dict))
+        # compare the emoji to the keys in the emoji_dict
         keys = [i for i in emoji_dict if helpers.emotes_equal(i, emoji)]
         if len(keys) == 1:
             key = keys[0]
@@ -244,12 +255,19 @@ class MainBot(commands.Bot):
                     logger.info('Delete (role): {}->{}->{}'.format(key, role0, role))
                     await member.remove_roles(role)
                 else:
+                    # if we get here, we've uniquely matched the emoji to a role
+                    if send_message is not None:
+                        await member.send(send_message)
+                        accept_string = helpers.clean_string(accept_string)
+                        self._emoji_dm_targets[member.id] = accept_string, target
                     await member.add_roles(role)
                 return role
             except AttributeError:
                 logger.info('Role attr err: {}->{}->{}'.format(key, role0, role))
         elif len(keys) > 1:
             logger.info('Multiple matches: {}'.format({i: emoji_dict[i] for i in keys}))
+
+        return None
 
     def tdt(self):
         for g in self.guilds:
