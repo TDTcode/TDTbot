@@ -44,7 +44,7 @@ class MainBot(commands.Bot):
         super().__init__(*args, **kwargs)
         self._emoji_role_data = []
         self._emoji_dm_targets = {}
-        self._em
+        #self._em
         self.usingV2 = usingV2
         # add all our cogs via load_extension
         if not usingV2:
