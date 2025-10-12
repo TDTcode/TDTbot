@@ -19,7 +19,7 @@ In the `config` subdirectory create a file `token.txt` with your bot's token in 
 The default config file is `config/tdt.json`, defaults can be found near the top of `param.py`.
 
 ### Emoji Role Assignment
-The bot can assign roles based on reactions to a message. To set this up add a `self.bot.enroll_emoji_role` call in `cogs/main.py` in the `__init__` function of `MainCommands`.
+The bot can assign roles based on reactions to a message. Currently if you are adding a role assignment to the code of conduct message, you need to manually update `emoji2role` in `param.py` to include the new emoji and role. Otherwise you can add a new call to `self.bot.enroll_emoji_role` in `cogs/main.py` in the `__init__` function of `MainCommands`.
 
 ### Trick or Treat
 A spooky game that runs on Halloween.
