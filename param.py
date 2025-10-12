@@ -55,6 +55,7 @@ emojis = _Struct(destiny_2=878802171913732118,
                  cod_bo6=1324177150097490001,
                  deadlock=1324177148608516169,
                  marvel_rivals=1324177147602141254,
+                 boarderlands=1427029251063943259,
                  )
 
 guilds = _Struct(tdt=164589623459184640)
@@ -77,6 +78,7 @@ roles = _Struct(
                 admin=318255861002928129,
                 supporter=1006390128907919411,
                 tdt_peeps=878812130453905420,
+                artist=1385411116498157598,
                 # game roles
                 destiny_2=878812130453905420,  # kept for backwards compatibility
                 d2pvp=1140789426319003738,
@@ -89,7 +91,7 @@ roles = _Struct(
                 call_of_duty=1320268864080187423,
                 marvel_rivals=1320268692268908645,
                 deadlock=1324178731333324912,
-                artist=1385411116498157598,
+                boarderlands=1427030059914498271,
                 )
 
 users = _Struct(electro=221778796250923008,
@@ -111,6 +113,7 @@ emoji2role = {emojis.tdt_bruh: roles.tdt_peeps,
               emojis.cod_bo6: roles.call_of_duty,
               emojis.deadlock: roles.deadlock,
               emojis.marvel_rivals: roles.marvel_rivals,
+              emojis.boarderlands: roles.boarderlands,
               }
 
 role2emoji = {v: k for k, v in emoji2role.items()}
