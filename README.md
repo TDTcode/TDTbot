@@ -17,3 +17,12 @@ In the `config` subdirectory create a file `token.txt` with your bot's token in 
 
 ### Configuration
 The default config file is `config/tdt.json`, defaults can be found near the top of `param.py`.
+
+### Trick or Treat
+A spooky game that runs on Halloween.
+
+Intructions for initiation:
+- Create a channel named "the_neighborhood" (or change the `_channel` variable in `cogs/trick_or_treat.py`)
+- Create a message in `#manual_page` and copy the channel ID to `messages.trick_or_treat` in `param.py`
+- Make sure `_game_on` is set to `"auto"` or `True` in `cogs/trick_or_treat.py`
+- Create a role named "SPOOKY" (or change the `_role` variable in `cogs/trick_or_treat.py`)
