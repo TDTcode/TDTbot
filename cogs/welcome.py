@@ -137,13 +137,13 @@ class Welcome(commands.Cog):
             if log_channel is not None:
                 await log_channel.send('New member {0.name} joined.'.format(member))
         retry = False
-        try:
-            await send_welcome(member)
-        except discord.Forbidden:
-            retry = True
+        #try:
+        #    await send_welcome(member)
+        #except discord.Forbidden:
+        #    retry = True
         manual = self.manual_channel
         msg = "Welcome to TDT {0.mention} <a:blobDance:738431916910444644>" \
-              " Please read my DM and look at the {1.mention}.".format(member, manual)
+              " Please look at the {1.mention}.".format(member, manual)
         await member.guild.system_channel.send(msg)
         msg = await self.fetch_coc()
         rxns = []
@@ -166,8 +166,8 @@ class Welcome(commands.Cog):
                 msg += "\nI've restored your " + ', '.join(_roles) + ' role'
                 msg += 's.' if len(_roles) > 1 else '.'
             await member.guild.system_channel.send(msg, reference=old)
-        if retry:
-            await send_welcome(member, retry=member.guild.system_channel)
+        #if retry:
+        #    await send_welcome(member, retry=member.guild.system_channel)
 
     @commands.command()
     async def send_welcome(self, ctx, member: discord.User = None):
