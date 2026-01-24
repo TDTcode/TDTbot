@@ -1,0 +1,9 @@
+# Ruff configuration mirroring .flake8 for Ruff 0.14.0+
+line-length = 120
+
+[lint.per-file-ignores]
+"cogs/wilds.py" = ["E501"]
+"cogs/wit.py" = ["E501"]
+"wit_data/__init__.py" = ["E501"]
+"__init__.py" = ["F401"]
+"*/__init__.py" = ["F401"]

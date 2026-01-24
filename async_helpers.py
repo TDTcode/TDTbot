@@ -1,21 +1,23 @@
 import asyncio
 import datetime
-import discord  # type: ignore
 import logging
 import time
+
+import discord  # type: ignore
+
 from . import git_manage
-from .param import roles
 from .helpers import localize
+from .param import roles
 
-logger = logging.getLogger('discord.' + __name__)
+logger = logging.getLogger("discord." + __name__)
 
 
-async def split_send(channel, message, deliminator='\n', n=2000, style=''):
+async def split_send(channel, message, deliminator="\n", n=2000, style=""):
     """Split a message into chunks and send them in chunks."""
     out = []
     if not message:
         return
-    if not type(message) in [tuple, list]:
+    if type(message) not in [tuple, list]:
         message = message.split(deliminator)
     msg = message.pop(0)
     while message:
@@ -46,7 +48,7 @@ async def admin_check(ctx=None, bot=None, author=None, guild=None):
         author = ctx.author
     if guild is None:
         guild = ctx.guild
-    logger.debug('admin_check', author, getattr(author, "top_role", "NO_ROLE"))
+    logger.debug("admin_check", author, getattr(author, "top_role", "NO_ROLE"))
     try:
         if author.top_role.id in [roles.admin, roles.devoted]:
             return True
@@ -76,15 +78,14 @@ async def wait_until(dt):
 
 async def git_log(channel, *args):
     """Print git log to discord chat."""
-    await split_send(channel, git_manage.git_log_items(), style='```')
+    await split_send(channel, git_manage.git_log_items(), style="```")
 
 
 async def parse_payload(payload, bot, *fields):
     fields = list(fields)
     if not fields:
-        fields = ['guild', 'member']
-    reqiers = {'member': ['guild'],
-               'messsage': ['channel']}
+        fields = ["guild", "member"]
+    reqiers = {"member": ["guild"], "messsage": ["channel"]}
 
     for i in fields:
         add = reqiers.get(i, [])
@@ -97,7 +98,7 @@ async def parse_payload(payload, bot, *fields):
         try:
             out["guild"] = [g for g in bot.guilds if g.id == payload.guild_id][0]
         except IndexError:
-            out['guild'] = await bot.fetch_guild(payload.guild_id)
+            out["guild"] = await bot.fetch_guild(payload.guild_id)
     if "member" in fields:
         member = payload.member
         if not member:

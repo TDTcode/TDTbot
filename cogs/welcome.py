@@ -1,15 +1,16 @@
-import discord  # type: ignore # noqa: F401
-from discord.ext import commands  # type: ignore
 import asyncio
 import datetime
-from ..helpers import find_channel, find_role, localize
-from ..param import rc, channels, messages, roles, emoji2role
-from ..version import usingV2
-from ..async_helpers import admin_check
 import logging
 
+import discord  # type: ignore # noqa: F401
+from discord.ext import commands  # type: ignore
 
-logger = logging.getLogger('discord.' + __name__)
+from ..async_helpers import admin_check
+from ..helpers import find_channel, find_role, localize
+from ..param import channels, emoji2role, messages, rc, roles
+from ..version import usingV2
+
+logger = logging.getLogger("discord." + __name__)
 _CoC_id = messages.CoC
 _wolfpack_id = messages.wolfpack
 _trick_or_treat = messages.trick_or_treat
@@ -19,34 +20,36 @@ _log_in_discord = False
 _before = datetime.datetime(2022, 1, 22, 0, 0, 0)
 # don't clear reactions from these messages
 _protected = [_CoC_id, _wolfpack_id, _trick_or_treat]
-_welcome_file = rc('welcome_file')
+_welcome_file = rc("welcome_file")
 
 try:
-    with open(_welcome_file, 'r') as f:
+    with open(_welcome_file, "r") as f:
         _welcome_text = f.read()
 except IOError:
-    logger.warning(f'Welcome file ({_welcome_file}) not found, using default welcome message.', exc_info=True)
-    _welcome_text = 'Greetings {member.name}! Part of my duties as TDTbot are to welcome ' \
-                    'newcomers to The Dream Team. \n\nSo welcome!\n\nWe have a few questions ' \
-                    'we ask everyone, so please post the answers to the following questions ' \
-                    'in the general chat:\n' \
-                    '1) How did you find out about TDT?\n' \
-                    '2) What games and platforms do you play?\n' \
-                    '3) Are you a YouTube subscriber?\n' \
-                    '4) Are you a Patreon supporter, or a Twitch sub (tier 2 or higher)? If so, what\'s your account name?\n\n'\
-                    'If you\'re interested in learning wolf pack (see our #manual_page), ping ' \
-                    '@member, and if you want to send any feedback to the TDT admins then leave ' \
-                    'me a DM.\n\n'\
-                    'And... finally... we have a code of conduct in our #manual_page that we ' \
-                    'ask everybody to agree to. Just give it a 👍 if you agree. If you want me to ' \
-                    'give you a Destiny 2 tag, click the corresponding platform tag on the ' \
-                    'code of conduct after you give the thumbs up.' \
-                    '\n\nWhelp, I hope someone gives you a less robotic welcome soon!\n\n'\
-                    'Also find us on social media:\n'\
-                    'YT channel membership: https://www.youtube.com/channel/UCKBCsmU53MBzCm_wNZY7hLA/join\n'\
-                    'Twitter: https://twitter.com/productions_tdt\n'\
-                    'Instagram: https://www.instagram.com/tdt_productions_\n'\
-                    'Patreon: https://www.patreon.com/TDTPatreon'
+    logger.warning(f"Welcome file ({_welcome_file}) not found, using default welcome message.", exc_info=True)
+    _welcome_text = (
+        "Greetings {member.name}! Part of my duties as TDTbot are to welcome "
+        "newcomers to The Dream Team. \n\nSo welcome!\n\nWe have a few questions "
+        "we ask everyone, so please post the answers to the following questions "
+        "in the general chat:\n"
+        "1) How did you find out about TDT?\n"
+        "2) What games and platforms do you play?\n"
+        "3) Are you a YouTube subscriber?\n"
+        "4) Are you a Patreon supporter, or a Twitch sub (tier 2 or higher)? If so, what's your account name?\n\n"
+        "If you're interested in learning wolf pack (see our #manual_page), ping "
+        "@member, and if you want to send any feedback to the TDT admins then leave "
+        "me a DM.\n\n"
+        "And... finally... we have a code of conduct in our #manual_page that we "
+        "ask everybody to agree to. Just give it a 👍 if you agree. If you want me to "
+        "give you a Destiny 2 tag, click the corresponding platform tag on the "
+        "code of conduct after you give the thumbs up."
+        "\n\nWhelp, I hope someone gives you a less robotic welcome soon!\n\n"
+        "Also find us on social media:\n"
+        "YT channel membership: https://www.youtube.com/channel/UCKBCsmU53MBzCm_wNZY7hLA/join\n"
+        "Twitter: https://twitter.com/productions_tdt\n"
+        "Instagram: https://www.instagram.com/tdt_productions_\n"
+        "Patreon: https://www.patreon.com/TDTPatreon"
+    )
 
 
 async def send_welcome(member, channel=None, retry=None, msg=_welcome_text):
@@ -61,7 +64,7 @@ async def send_welcome(member, channel=None, retry=None, msg=_welcome_text):
         return await channel.send(msg.format(member=member))
     except discord.Forbidden as e:
         if retry is not None:
-            msg = '{:} I am unable to DM you so I am posting my standard welcome DM here.\n' + msg
+            msg = "{:} I am unable to DM you so I am posting my standard welcome DM here.\n" + msg
             await retry.send(msg.format(member=member))
             return await retry.send(msg.format(member=member))
         raise e
@@ -69,6 +72,7 @@ async def send_welcome(member, channel=None, retry=None, msg=_welcome_text):
 
 class Welcome(commands.Cog):
     """Cog to listen and send alerts"""
+
     # emoji: role
     _emoji_dict = emoji2role
 
@@ -122,28 +126,28 @@ class Welcome(commands.Cog):
         if member is None:
             member = ctx.author
         msg = await self.fetch_coc()
-        rxns = [rxn for rxn in msg.reactions
-                if await rxn.users().find(lambda u: u == member)]
-        await ctx.send(''.join(['{}'.format(rxn.emoji) for rxn in rxns]))
+        rxns = [rxn for rxn in msg.reactions if await rxn.users().find(lambda u: u == member)]
+        await ctx.send("".join(["{}".format(rxn.emoji) for rxn in rxns]))
 
     @commands.Cog.listener()
     async def on_member_join(self, member):
         """Alert admin type roles on new member joining"""
-        logger.info('New member {0.name} joined'.format(member))
+        logger.info("New member {0.name} joined".format(member))
         _roles = [find_role(member.guild, i) for i in ["Admin", "Devoted"]]
-        _roles = " ".join([i.mention for i in _roles if hasattr(i, 'mention')])
+        _roles = " ".join([i.mention for i in _roles if hasattr(i, "mention")])
         if _log_in_discord:
             log_channel = self.log_channel
             if log_channel is not None:
-                await log_channel.send('New member {0.name} joined.'.format(member))
-        retry = False
-        #try:
+                await log_channel.send("New member {0.name} joined.".format(member))
+        # retry = False
+        # try:
         #    await send_welcome(member)
-        #except discord.Forbidden:
+        # except discord.Forbidden:
         #    retry = True
         manual = self.manual_channel
-        msg = "Welcome to TDT {0.mention} <a:blobDance:738431916910444644>" \
-              " Please look at the {1.mention}.".format(member, manual)
+        msg = "Welcome to TDT {0.mention} <a:blobDance:738431916910444644> Please look at the {1.mention}.".format(
+            member, manual
+        )
         await member.guild.system_channel.send(msg)
         msg = await self.fetch_coc()
         rxns = []
@@ -158,15 +162,16 @@ class Welcome(commands.Cog):
             msg = "... Or I guess I should say welcome back!"
             emoji_dict = {"👍": _recruit}
             emoji_dict.update(self._emoji_dict)
-            _roles = [await self.bot.emoji2role(None, emoji_dict, emoji=rxn.emoji,
-                                                member=member, guild=member.guild)
-                      for rxn in rxns]
+            _roles = [
+                await self.bot.emoji2role(None, emoji_dict, emoji=rxn.emoji, member=member, guild=member.guild)
+                for rxn in rxns
+            ]
             _roles = ["`{}`".format(role) for role in _roles if role]
             if _roles:
-                msg += "\nI've restored your " + ', '.join(_roles) + ' role'
-                msg += 's.' if len(_roles) > 1 else '.'
+                msg += "\nI've restored your " + ", ".join(_roles) + " role"
+                msg += "s." if len(_roles) > 1 else "."
             await member.guild.system_channel.send(msg, reference=old)
-        #if retry:
+        # if retry:
         #    await send_welcome(member, retry=member.guild.system_channel)
 
     @commands.command()
@@ -217,11 +222,11 @@ class Welcome(commands.Cog):
                 # if they reacted before this with a platform role
                 msg = await self.fetch_coc()
                 for rxn in msg.reactions:
-                    if getattr(rxn.emoji, 'id', rxn.emoji) in self._emoji_dict:
+                    if getattr(rxn.emoji, "id", rxn.emoji) in self._emoji_dict:
                         if payload.member in [u async for u in rxn.users()]:
                             await self.bot.emoji2role(*args, emoji=rxn.emoji, **kwargs)
             return
-        if hasattr(payload.emoji, 'id'):
+        if hasattr(payload.emoji, "id"):
             await self.bot.emoji2role(*args, **kwargs)
         await self.clean_coc(None)
 
@@ -230,7 +235,7 @@ class Welcome(commands.Cog):
         """Clean up reactions to the CoC message"""
         msg = await self.fetch_coc()
         for rxn in msg.reactions:
-            if getattr(rxn.emoji, 'id', rxn.emoji) not in list(self._emoji_dict) + ["👍"]:
+            if getattr(rxn.emoji, "id", rxn.emoji) not in list(self._emoji_dict) + ["👍"]:
                 await rxn.clear()
 
     @commands.command()
@@ -270,9 +275,11 @@ class Welcome(commands.Cog):
 
 
 if usingV2:
+
     async def setup(bot):
         cog = Welcome(bot)
         await bot.add_cog(cog)
 else:
+
     def setup(bot):
         bot.add_cog(Welcome(bot))
