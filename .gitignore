@@ -2,3 +2,7 @@ __pycache__
 .idea
 test.ipynb
 uv.lock
+TDTbot.egg-info/
+.coverage
+.zed/
+coverage.xml
