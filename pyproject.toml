@@ -1,0 +1,34 @@
+[project]
+name = "TDTbot"
+description = "A Python bot for the TDT Discord server."
+authors = [{name = "StellarNemesis", email = "StellarNemesis@gmail.com"}]
+maintainers = [{name = "StellarNemesis", email = "StellarNemesis@gmail.com"}]
+requires-python = ">=3.13"
+dynamic = ["version"]
+readme = "README.md"
+dependencies = [
+    "numpy",
+    "discord.py[voice]",
+    "humanize",
+    "ephem",
+    "pytz",
+    "gitpython",
+    "pynacl",
+    "tweepy[async]",
+]
+
+[dependency-groups]
+dev = [
+    "pytest",
+    "pytest-asyncio",
+    "pytest-cov",
+    "flake8",
+    "ruff",
+    "black",
+]
+
+[tool.setuptools]
+packages = ["TDTbot"]
+
+[tool.setuptools.dynamic]
+version = {attr = "TDTbot.__version__"}

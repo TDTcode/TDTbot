@@ -1,21 +1,30 @@
-import git  # type: ignore
-import os
 import datetime
+import os
+
+import git  # type: ignore
 import humanize  # type: ignore
 import pytz
 
 directory = os.path.split(os.path.realpath(__file__))[0]
-own_repo = git.Repo(directory)
+try:
+    own_repo = git.Repo(directory)
+except git.exc.InvalidGitRepositoryError:
+    own_repo = None
 
 
 def update(repo=None):
     """Update TDTbot module with a git pull... to git good."""
     if repo is None:
         repo = own_repo
-    elif hasattr(repo, 'lower'):
+    elif hasattr(repo, "lower"):
         if os.path.isdir(repo):
-            repo = git.Repo(repo)
-    repo.remote().pull()
+            try:
+                repo = git.Repo(repo)
+            except git.exc.InvalidGitRepositoryError:
+                repo = None
+    if repo is None:
+        return None
+    return repo.remote().pull()
 
 
 def git_log_items(repo=None, look_back=None):
@@ -24,6 +33,8 @@ def git_log_items(repo=None, look_back=None):
     now = pytz.utc.localize(datetime.datetime.utcnow())
     if repo is None:
         repo = own_repo
+    if repo is None:
+        return []
     if look_back is None:
         look_back = datetime.timedelta(days=7)
     if isinstance(look_back, datetime.timedelta):
@@ -36,11 +47,12 @@ def git_log_items(repo=None, look_back=None):
         return humanize.naturaltime(now - i.committed_datetime)
 
     fmt = "{:}: {:} <{:}> [{:}]"
-    return [fmt.format(dt(i), i.message.strip(), i.author.name, i.hexsha[:7])
-            for i in items]
+    return [fmt.format(dt(i), i.message.strip(), i.author.name, i.hexsha[:7]) for i in items]
 
 
 def last_updated(repo=None):
     if repo is None:
         repo = own_repo
+    if repo is None:
+        return None
     return repo.head.commit.committed_datetime

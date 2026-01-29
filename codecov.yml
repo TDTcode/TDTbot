@@ -1,0 +1,17 @@
+codecov:
+  require_ci_to_pass: false
+
+coverage:
+  status:
+    project: off
+    patch: off
+  ignore:
+    - "cogs/wilds.py"
+    - "cogs/wit.py"
+    - "wit_data/__init__.py"
+    - "__init__.py"
+    - "*/__init__.py"
+
+comment:
+  layout: "reach, diff, flags, files"
+  behavior: default
