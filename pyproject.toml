@@ -3,7 +3,7 @@ name = "TDTbot"
 description = "A Python bot for the TDT Discord server."
 authors = [{name = "StellarNemesis", email = "StellarNemesis@gmail.com"}]
 maintainers = [{name = "StellarNemesis", email = "StellarNemesis@gmail.com"}]
-requires-python = ">=3.13"
+requires-python = ">=3.10"
 dynamic = ["version"]
 readme = "README.md"
 dependencies = [
