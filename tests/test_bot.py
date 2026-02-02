@@ -1,38 +1,11 @@
-import asyncio
+import datetime
 import types
 
 import pytest
+import pytz
+
 import TDTbot.bot as bot_module
-from TDTbot import helpers
-from TDTbot.bot import MainBot
-
-
-@pytest.fixture
-def bot(monkeypatch):
-    """
-    Create a MainBot instance with discord/network calls mocked out.
-    """
-    # Force v2 behavior so __init__ doesn't try to load extensions immediately
-    monkeypatch.setattr(bot_module, "usingV2", True)
-
-    # Stub out load_extension to avoid touching the filesystem/network
-    monkeypatch.setattr(
-        bot_module.commands.Bot, "load_extension", lambda self, name: None
-    )
-
-    # Build the bot with a fresh event loop to avoid reusing a closed loop
-    loop = asyncio.new_event_loop()
-    b = MainBot(loop=loop)
-    if not hasattr(b, "_connection"):
-        b._connection = types.SimpleNamespace()
-    b._connection._guilds = {}
-    b._connection.user = types.SimpleNamespace(id=0)
-
-    yield b
-
-    # Clean up the loop after each test
-    loop.call_soon_threadsafe(loop.stop)
-    loop.close()
+from TDTbot import helpers, param
 
 
 def test_bot_initializes_with_defaults(bot):
@@ -218,9 +191,7 @@ async def test_emoji2role_adds_role_on_match(bot, monkeypatch):
     guild = FakeGuild(role)
     bot._connection._guilds = {guild.id: guild}
 
-    payload = types.SimpleNamespace(
-        message_id=None, guild_id=guild.id, emoji="🙂", member=member, user_id=member.id
-    )
+    payload = types.SimpleNamespace(message_id=None, guild_id=guild.id, emoji="🙂", member=member, user_id=member.id)
 
     result = await bot.emoji2role(payload, {"🙂": role.id})
     assert result is role
@@ -262,15 +233,169 @@ async def test_emoji2role_delete_removes_role(bot, monkeypatch):
     guild = FakeGuild(role, other_role)
     bot._connection._guilds = {guild.id: guild}
 
-    payload = types.SimpleNamespace(
-        message_id=None, guild_id=guild.id, emoji="🙂", member=member, user_id=member.id
-    )
+    payload = types.SimpleNamespace(message_id=None, guild_id=guild.id, emoji="🙂", member=member, user_id=member.id)
 
-    result = await bot.emoji2role(
-        payload, {"🙂": role.id}, delete=True, remove=[other_role.id]
-    )
+    result = await bot.emoji2role(payload, {"🙂": role.id}, delete=True, remove=[other_role.id])
 
     assert result is role
     assert role in member.removed
     assert other_role in member.removed
     assert role not in member.roles
+
+
+@pytest.mark.asyncio
+async def test_bot_check_respects_ignore_list(bot):
+    ctx = types.SimpleNamespace(channel=types.SimpleNamespace(name="devoted_chat"))
+    assert await bot.bot_check(ctx) is False
+
+    ctx2 = types.SimpleNamespace(channel=types.SimpleNamespace(name="not_ignored"))
+    assert await bot.bot_check(ctx2) is True
+
+
+def test_enroll_emoji_role_validates_inputs(bot):
+    with pytest.raises(ValueError):
+        bot.enroll_emoji_role()
+    with pytest.raises(ValueError):
+        bot.enroll_emoji_role(123)
+
+    bot.enroll_emoji_role({"🙂": 1}, some_kw=True)
+    assert bot._emoji_role_data[-1][0][0] == {"🙂": 1}
+    assert bot._emoji_role_data[-1][1]["some_kw"] is True
+
+
+def test_tdt_returns_guild_and_raises(bot):
+    guild = types.SimpleNamespace(id=param.guilds.tdt)
+    bot._connection._guilds = {guild.id: guild}
+    assert bot.tdt() is guild
+
+    bot._connection._guilds = {}
+    with pytest.raises(RuntimeError):
+        bot.tdt()
+
+
+def test_restart_time_prefers_reissue_message(bot):
+    bot.startup = pytz.utc.localize(datetime.datetime(2020, 1, 1, 0, 0, 0))
+    reissue_msg = types.SimpleNamespace(created_at=datetime.datetime(2021, 1, 1, 12, 0, 0))
+    bot.reissue = types.SimpleNamespace(message=reissue_msg)
+
+    result = bot.restart_time()
+    assert result == pytz.utc.localize(reissue_msg.created_at)
+
+
+@pytest.mark.asyncio
+async def test_emoji2role_respects_min_role(bot):
+    class Role:
+        def __init__(self, rid):
+            self.id = rid
+            self.name = str(rid)
+
+        def __lt__(self, other):
+            return self.id < other.id
+
+    low = Role(1)
+    high = Role(2)
+
+    class Member:
+        def __init__(self):
+            self.id = 10
+            self.roles = []
+            self.added = []
+            self.removed = []
+            self.top_role = low
+
+        async def add_roles(self, r):
+            self.added.append(r)
+            self.roles.append(r)
+
+        async def remove_roles(self, r):
+            self.removed.append(r)
+
+    member = Member()
+
+    class FakeGuild:
+        def __init__(self):
+            self.id = 14
+            self.roles = [low, high]
+
+        def get_member(self, uid):
+            return member if uid == member.id else None
+
+    guild = FakeGuild()
+    bot._connection._guilds = {guild.id: guild}
+
+    payload = types.SimpleNamespace(message_id=None, guild_id=guild.id, emoji="🙂", member=member, user_id=member.id)
+
+    result = await bot.emoji2role(payload, {"🙂": high.id}, min_role=high.id)
+    assert result is None
+    assert member.added == []
+    assert member.roles == []
+
+
+@pytest.mark.asyncio
+async def test_emoji2role_multiple_matches_returns_none(bot):
+    role = types.SimpleNamespace(id=5, name="role")
+
+    class Member:
+        def __init__(self):
+            self.id = 20
+            self.roles = [role]
+            self.added = []
+            self.removed = []
+            self.top_role = role
+
+        async def add_roles(self, r):
+            self.added.append(r)
+
+        async def remove_roles(self, r):
+            self.removed.append(r)
+
+    member = Member()
+
+    class FakeGuild:
+        def __init__(self):
+            self.id = 15
+            self.roles = [role]
+
+        def get_member(self, uid):
+            return member if uid == member.id else None
+
+    guild = FakeGuild()
+    bot._connection._guilds = {guild.id: guild}
+
+    class HashableEmoji:
+        def __init__(self, name):
+            self.name = name
+
+        def __hash__(self):
+            return hash(self.name)
+
+    second_key = HashableEmoji("🙂")
+    payload = types.SimpleNamespace(message_id=None, guild_id=guild.id, emoji="🙂", member=member, user_id=member.id)
+
+    result = await bot.emoji2role(payload, {"🙂": role.id, second_key: role.id})
+    assert result is None
+    assert member.added == []
+
+
+@pytest.mark.asyncio
+async def test_get_user_configs_uses_fetch_user(bot, monkeypatch):
+    files = ["/tmp/111.json", "/tmp/222.json"]
+    monkeypatch.setattr(bot_module, "get_all_user_config_files", lambda: files)
+
+    captured = []
+
+    async def fake_fetch_user(uid):
+        captured.append(uid)
+        return types.SimpleNamespace(id=uid)
+
+    bot.fetch_user = fake_fetch_user
+
+    class FakeUserConfig:
+        def __init__(self, user):
+            self.user = user
+
+    monkeypatch.setattr(bot_module, "UserConfig", FakeUserConfig)
+
+    configs = await bot.get_user_configs()
+    assert [uc.user.id for uc in configs] == [111, 222]
+    assert captured == [111, 222]
