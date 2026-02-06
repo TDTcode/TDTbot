@@ -1,9 +1,11 @@
-from aiohttp.client_exceptions import ClientConnectorError
 import argparse
 import importlib
 import sys
 import time
 import tracemalloc
+
+from aiohttp.client_exceptions import ClientConnectorError
+
 from . import log_init
 
 # for traceback info to debug
@@ -11,26 +13,13 @@ tracemalloc.start()
 
 # setup and parse command line options
 parser = argparse.ArgumentParser()
-parser.add_argument('-c', '--config',
-                    default=None,
-                    type=str,
-                    help='Load given config file.')
-parser.add_argument('-t', '--token',
-                    default=None,
-                    type=str,
-                    help='Use provided API token/file.')
-parser.add_argument('-r', '--roasts',
-                    default=None,
-                    type=str,
-                    help='Use provided roast file.')
-parser.add_argument('-v', '--verbose',
-                    default=False,
-                    action='store_true',
-                    help="print all output, timestamps and logging information")
-parser.add_argument('-l', '--logfile',
-                    type=str,
-                    default=None,
-                    help='Set filename of logfile')
+parser.add_argument("-c", "--config", default=None, type=str, help="Load given config file.")
+parser.add_argument("-t", "--token", default=None, type=str, help="Use provided API token/file.")
+parser.add_argument("-r", "--roasts", default=None, type=str, help="Use provided roast file.")
+parser.add_argument(
+    "-v", "--verbose", default=False, action="store_true", help="print all output, timestamps and logging information"
+)
+parser.add_argument("-l", "--logfile", type=str, default=None, help="Set filename of logfile")
 args = parser.parse_args()
 
 now = 0
@@ -39,7 +28,8 @@ reissue, startup = None, None
 # while it takes more than 5 second to complete this loop
 while time.time() - now > 5:
     now = time.time()
-    from . import param, bot, git_manage, reloader, wit_data
+    from . import bot, git_manage, param, reloader
+
     # init param
     param.rc.read_config(args.config)
     token = param.rc.read_token(args.token)
@@ -73,10 +63,9 @@ while time.time() - now > 5:
     # reload all packages
     for i in range(2):
         reloader.reload_package(sys.modules[__name__])
-        importlib.reload(wit_data)
         importlib.reload(param)
         importlib.reload(git_manage)
         importlib.reload(reloader)
         importlib.reload(bot)
-    del param, bot, git_manage, reloader, wit_data
+    del param, bot, git_manage, reloader
     logger.info("End of loop.")
