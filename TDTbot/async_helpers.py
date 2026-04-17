@@ -47,7 +47,7 @@ async def admin_check(ctx=None, bot=None, author=None, guild=None):
             raise ValueError("Either ctx or author must be specified")
         author = ctx.author
     if guild is None:
-        guild = ctx.guild
+        guild = getattr(ctx, "guild")
     logger.debug("admin_check", author, getattr(author, "top_role", "NO_ROLE"))
     try:
         if author.top_role.id in [roles.admin, roles.devoted]:
