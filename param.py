@@ -60,10 +60,10 @@ emojis = _Struct(destiny_2=878802171913732118,
 
 guilds = _Struct(tdt=164589623459184640)
 
-messages = _Struct(CoC=563406038754394112,
+messages = _Struct(CoC=564687308478087198,
                    wolfpack=945717800788447282,
                    trick_or_treat=1427003734751449298,
-                   games=563406038754394112,
+                   games=564687308478087198,
                    wit_pvp=1140151464732397628,
                    wit_pve=1109211558229323927,
                    )
