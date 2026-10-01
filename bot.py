@@ -17,7 +17,9 @@ from .version import usingV2
 
 
 logger = logging.getLogger('discord.' + __name__)
-intents = discord.Intents.all()
+intents = discord.Intents.default()
+intents.members = True
+intents.message_content = True
 
 
 def cog_list():
