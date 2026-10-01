@@ -1,6 +1,8 @@
 # TDTbot
 A Discord bot for The Dream Team clan
 
+[Privacy Policy](PRIVACY.md)
+
 ### Dependancies
 1) Python >= 3.5.3
 2) discordpy https://discordpy.readthedocs.io/en/latest/intro.html#installing

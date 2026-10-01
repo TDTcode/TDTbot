@@ -229,6 +229,11 @@ class MainCommands(commands.Cog):
         """Source code for this bot."""
         await ctx.send('My source code is available at https://github.com/TDTcode/TDTbot')
 
+    @commands.command(aliases=['privacy', 'policy'])
+    async def privacy_policy(self, ctx):
+        """Privacy policy for this bot."""
+        await ctx.send('My privacy policy is available at https://github.com/TDTcode/TDTbot/blob/master/PRIVACY.md')
+
     @commands.command()
     @commands.check(_parings_perms)
     async def pairings(self, ctx, *args):
