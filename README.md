@@ -17,6 +17,11 @@ In the `config` subdirectory create a file `token.txt` with your bot's token in 
 - Run: `python3 -m TDTbot <optional flags>`
 - Help/see options: `python3 -m TDTbot -h`
 
+### Ubuntu systemd setup
+
+See [setup/README.md](setup/README.md) for Ubuntu installation, systemd
+configuration, and service management.
+
 ### Configuration
 The default config file is `config/tdt.json`, defaults can be found near the top of `param.py`.
 

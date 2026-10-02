@@ -1,0 +1,21 @@
+[Unit]
+Description=TDTbot Discord bot
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+User=discordbot
+WorkingDirectory=/srv/discord-bot
+ExecStart=/srv/discord-bot/.venv/bin/python -m TDTbot
+Restart=on-failure
+RestartSec=10
+
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectSystem=strict
+ProtectHome=true
+ReadWritePaths=/srv/discord-bot
+RestrictAddressFamilies=AF_INET AF_INET6
+
+[Install]
+WantedBy=multi-user.target
