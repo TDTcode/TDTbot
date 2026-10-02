@@ -47,10 +47,11 @@ if [[ ! -d "$checkout_dir" ]]; then
 fi
 
 # Keep setup rerunnable after a dependency change and support hosts where uv
-# was not present when install.sh was run. uv downloads Python 3.11 if needed.
+# was not present when install.sh was run. uv selects the available Python;
+# pyproject.toml supplies the project's compatibility constraint.
 readonly uv_bin=$(ensure_uv)
 if [[ ! -x "$venv_dir/bin/python" ]]; then
-    runuser -u "$service_user" -- "$uv_bin" venv --python 3.11 "$venv_dir"
+    runuser -u "$service_user" -- "$uv_bin" venv "$venv_dir"
 fi
 runuser -u "$service_user" -- "$uv_bin" pip install \
     --python "$venv_dir/bin/python" --editable "$checkout_dir"

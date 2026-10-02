@@ -13,7 +13,7 @@ sudo ./setup/install.sh <repository-url>
 ```
 
 The installer downloads `uv` if it is not already installed, uses it to create
-the Python 3.11 environment at `/srv/discord-bot/.venv`, and installs the
+the Python environment at `/srv/discord-bot/.venv`, and installs the
 dependencies declared in `pyproject.toml`.
 
 It reuses an existing RSA key at `/srv/discord-bot/.ssh/id_rsa` when present;

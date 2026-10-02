@@ -120,10 +120,11 @@ else
         git clone "$repo_url_for_clone" "$checkout_dir"
 fi
 
-# Reuse an existing virtual environment; otherwise let uv create one with
-# Python 3.11, downloading that interpreter if it is unavailable locally.
+# Reuse an existing virtual environment; otherwise let uv select an available
+# Python interpreter. The project's requires-python constraint is enforced
+# when its dependencies are installed below.
 if [[ ! -x "$venv_dir/bin/python" ]]; then
-    runuser -u "$service_user" -- "$uv_bin" venv --python 3.11 "$venv_dir"
+    runuser -u "$service_user" -- "$uv_bin" venv "$venv_dir"
 fi
 
 # Install the repository's declared runtime dependencies into the isolated
