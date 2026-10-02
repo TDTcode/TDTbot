@@ -27,11 +27,32 @@ readonly app_dir=/srv/discord-bot
 readonly checkout_dir="$app_dir/TDTbot"
 readonly venv_dir="$app_dir/.venv"
 readonly service_user=discordbot
+readonly ssh_dir="$app_dir/.ssh"
+ssh_key="$ssh_dir/id_ed25519"
 
-# python3-venv is needed to create the isolated environment. Installing these
-# packages here makes the script usable on a minimal Ubuntu installation.
+ensure_uv() {
+    if command -v uv >/dev/null 2>&1; then
+        command -v uv
+        return
+    fi
+
+    local installer
+    installer=$(mktemp)
+    trap 'rm -f "$installer"' RETURN
+    curl --fail --silent --show-error --location \
+        https://astral.sh/uv/install.sh --output "$installer"
+    UV_INSTALL_DIR=/usr/local/bin UV_NO_MODIFY_PATH=1 sh "$installer" >/dev/null
+    rm -f "$installer"
+    command -v uv
+}
+
+# These packages make the script usable on a minimal Ubuntu installation.
 apt-get update
-apt-get install --yes git python3 python3-venv
+apt-get install --yes curl git openssh-client python3
+
+# Install uv system-wide only when it is not already available. uv can fetch
+# the requested Python version when the distribution does not provide it.
+readonly uv_bin=$(ensure_uv)
 
 # Create the locked-down service account only when it does not already exist.
 # --create-home also establishes /srv/discord-bot as its home directory.
@@ -43,6 +64,30 @@ fi
 # Ensure the service account owns the application directory before cloning.
 install -d -o "$service_user" -g "$service_user" "$app_dir"
 
+# Give the service account its own GitHub SSH identity. The clone is held
+# until the operator has uploaded the public key to GitHub, otherwise a fresh
+# installation fails with an unhelpful repository-access error.
+install -d -m 700 -o "$service_user" -g "$service_user" "$ssh_dir"
+
+# Reuse an existing RSA identity when one is already present. Otherwise reuse
+# an existing Ed25519 identity, or create a new Ed25519 key as the default.
+if [[ -f "$ssh_dir/id_rsa" ]]; then
+    ssh_key="$ssh_dir/id_rsa"
+fi
+if [[ ! -f "$ssh_key" ]]; then
+    runuser -u "$service_user" -- ssh-keygen -q -t ed25519 -N '' \
+        -C "${service_user}@$(hostname --fqdn 2>/dev/null || hostname)" \
+        -f "$ssh_key"
+fi
+if [[ ! -f "$ssh_key.pub" ]]; then
+    runuser -u "$service_user" -- ssh-keygen -y -f "$ssh_key" \
+        > "$ssh_key.pub"
+    chown "$service_user:$service_user" "$ssh_key.pub"
+    chmod 644 "$ssh_key.pub"
+fi
+chown "$service_user:$service_user" "$ssh_key"
+chmod 600 "$ssh_key"
+
 # Do not overwrite an existing checkout. An existing non-Git directory is
 # rejected so the installer cannot place files into an ambiguous deployment.
 if [[ -e "$checkout_dir" ]]; then
@@ -51,21 +96,40 @@ if [[ -e "$checkout_dir" ]]; then
         exit 1
     fi
 else
-    runuser -u "$service_user" -- git clone "$repo_url" "$checkout_dir"
+    echo
+    echo "Add this SSH key to GitHub before continuing:"
+    echo "  https://github.com/settings/keys"
+    echo
+    cat "$ssh_key.pub"
+    echo
+    read -r -p "Have you uploaded this key to GitHub? [y/N] " github_key_ready
+    if [[ ! "$github_key_ready" =~ ^[Yy]$ ]]; then
+        echo "The GitHub SSH key must be uploaded before cloning." >&2
+        exit 1
+    fi
+
+    # Accept the common HTTPS form while still cloning over SSH, so the service
+    # account key is actually used. Other URLs are passed through unchanged.
+    repo_url_for_clone=$repo_url
+    if [[ "$repo_url" =~ ^https://github\.com/(.+)$ ]]; then
+        repo_url_for_clone="git@github.com:${BASH_REMATCH[1]}"
+    fi
+
+    runuser -u "$service_user" -- env \
+        GIT_SSH_COMMAND="ssh -i $ssh_key -o IdentitiesOnly=yes -o StrictHostKeyChecking=accept-new" \
+        git clone "$repo_url_for_clone" "$checkout_dir"
 fi
 
-# Reuse an existing virtual environment; otherwise create one with the system
-# Python. Dependencies are installed below even when the environment exists,
-# making this step safe to rerun after dependency changes.
+# Reuse an existing virtual environment; otherwise let uv create one with
+# Python 3.11, downloading that interpreter if it is unavailable locally.
 if [[ ! -x "$venv_dir/bin/python" ]]; then
-    python3 -m venv "$venv_dir"
+    runuser -u "$service_user" -- "$uv_bin" venv --python 3.11 "$venv_dir"
 fi
 
-# These are the runtime dependencies currently declared in environment.yaml.
-# The venv keeps them separate from Ubuntu's system Python installation.
-"$venv_dir/bin/python" -m pip install --upgrade pip
-"$venv_dir/bin/python" -m pip install \
-    pytz humanize numpy ephem gitpython pynacl 'tweepy[async]' 'discord.py[voice]'
+# Install the repository's declared runtime dependencies into the isolated
+# environment. uv resolves pyproject.toml and downloads packages as needed.
+runuser -u "$service_user" -- "$uv_bin" pip install \
+    --python "$venv_dir/bin/python" --editable "$checkout_dir"
 
 # The service user must be able to read the checkout, virtual environment, and
 # configuration files when systemd starts the bot.

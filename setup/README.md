@@ -12,9 +12,16 @@ provide the repository URL to clone:
 sudo ./setup/install.sh <repository-url>
 ```
 
-The installer creates a Python virtual environment at
-`/srv/discord-bot/.venv`, installs the dependencies listed in
-`environment.yaml`, and checks out the bot at `/srv/discord-bot/TDTbot`.
+The installer downloads `uv` if it is not already installed, uses it to create
+the Python 3.11 environment at `/srv/discord-bot/.venv`, and installs the
+dependencies declared in `pyproject.toml`.
+
+It reuses an existing RSA key at `/srv/discord-bot/.ssh/id_rsa` when present;
+otherwise it reuses an Ed25519 key or creates one at
+`/srv/discord-bot/.ssh/id_ed25519`. The installer prints the selected public
+key and waits for you to add it at <https://github.com/settings/keys> before
+cloning the repository. An HTTPS GitHub URL is automatically converted to its
+SSH equivalent for the clone.
 
 Create the bot token file before enabling the service:
 

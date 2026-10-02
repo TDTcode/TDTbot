@@ -15,17 +15,45 @@ fi
 # These paths must match setup/install.sh and setup/tdtbot.service.
 readonly app_dir=/srv/discord-bot
 readonly checkout_dir="$app_dir/TDTbot"
+readonly venv_dir="$app_dir/.venv"
 readonly token_file="$checkout_dir/config/token.txt"
 readonly service_user=discordbot
 # Resolve the directory containing this script so the unit can be installed
 # correctly regardless of the caller's current working directory.
 readonly script_dir=$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)
 
+ensure_uv() {
+    if command -v uv >/dev/null 2>&1; then
+        command -v uv
+        return
+    fi
+
+    local installer
+    installer=$(mktemp)
+    trap 'rm -f "$installer"' RETURN
+    apt-get update
+    apt-get install --yes curl
+    curl --fail --silent --show-error --location \
+        https://astral.sh/uv/install.sh --output "$installer"
+    UV_INSTALL_DIR=/usr/local/bin UV_NO_MODIFY_PATH=1 sh "$installer" >/dev/null
+    rm -f "$installer"
+    command -v uv
+}
+
 # Refuse to configure a partial installation.
 if [[ ! -d "$checkout_dir" ]]; then
     echo "Missing checkout: $checkout_dir. Run install.sh first." >&2
     exit 1
 fi
+
+# Keep setup rerunnable after a dependency change and support hosts where uv
+# was not present when install.sh was run. uv downloads Python 3.11 if needed.
+readonly uv_bin=$(ensure_uv)
+if [[ ! -x "$venv_dir/bin/python" ]]; then
+    runuser -u "$service_user" -- "$uv_bin" venv --python 3.11 "$venv_dir"
+fi
+runuser -u "$service_user" -- "$uv_bin" pip install \
+    --python "$venv_dir/bin/python" --editable "$checkout_dir"
 
 # An empty token file would make the bot fail to authenticate. The token is
 # intentionally not created by this script because it must come from the bot
