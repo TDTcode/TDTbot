@@ -2,6 +2,7 @@
 Description=TDTbot Discord bot
 After=network-online.target
 Wants=network-online.target
+RequiresMountsFor=/srv/discord-bot
 
 [Service]
 User=discordbot

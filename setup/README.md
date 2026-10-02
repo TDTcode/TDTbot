@@ -3,6 +3,28 @@
 These scripts install TDTbot under `/srv/discord-bot` as the unprivileged
 `discordbot` user and run it with systemd.
 
+## Encryption requirement
+
+All service-user data is required to be encrypted at rest. The service user's
+home directory is `/srv/discord-bot`, so this includes `TDTbot/config`, the
+Discord token, the service user's SSH key, logs, and any user data written by
+the bot.
+
+Use Ubuntu's installer option to encrypt the disk with LUKS, preferably with
+encrypted LVM. If the host is already installed, an encrypted filesystem
+mounted at `/srv` also satisfies the requirement. The installation scripts
+verify that `/srv/discord-bot` is backed by a `crypt` device before creating
+or configuring the service, and refuse to continue on an unencrypted host.
+
+The disk must be unlocked before `tdtbot.service` starts. A boot-time
+passphrase prompt is the simplest option. TPM2-backed automatic unlocking can
+be used when unattended reboots are required, but its provisioning and
+recovery policy are host-specific and are not handled by these scripts.
+
+Do not put an encryption key or recovery passphrase inside the repository or
+`/srv/discord-bot`; doing so would defeat at-rest protection. Encryption does
+not protect data while the disk is unlocked and the service is running.
+
 ## Install
 
 From an Ubuntu checkout of this repository, run the installer as root and

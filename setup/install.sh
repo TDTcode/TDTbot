@@ -46,9 +46,28 @@ ensure_uv() {
     command -v uv
 }
 
+require_encrypted_storage() {
+    local target=$1
+    local source
+
+    source=$(findmnt --target "$target" --noheadings --output SOURCE 2>/dev/null || true)
+    if [[ -z "$source" ]] || ! lsblk --inverse --noheadings --output TYPE "$source" \
+        | awk '$1 == "crypt" { found = 1 } END { exit !found }'; then
+        echo "Refusing to install: $target is not backed by encrypted storage." >&2
+        echo "Install Ubuntu with LUKS encryption, or mount an encrypted /srv volume, then retry." >&2
+        exit 1
+    fi
+
+    echo "Verified encrypted storage for $target ($source)."
+}
+
 # These packages make the script usable on a minimal Ubuntu installation.
 apt-get update
-apt-get install --yes curl git openssh-client python3
+apt-get install --yes curl git openssh-client python3 util-linux
+
+# The service user's home directory is /srv/discord-bot. Require a LUKS-backed
+# filesystem before creating or copying any service data there.
+require_encrypted_storage "$app_dir"
 
 # Install uv system-wide only when it is not already available. uv can fetch
 # the requested Python version when the distribution does not provide it.
