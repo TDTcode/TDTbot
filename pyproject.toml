@@ -1,0 +1,31 @@
+[project]
+name = "tdtbot"
+version = "0.1.0"
+description = "A Discord bot for The Dream Team clan"
+readme = "README.md"
+requires-python = ">=3.11"
+dependencies = [
+    "discord.py[voice]",
+    "ephem",
+    "gitpython",
+    "humanize",
+    "numpy",
+    "pynacl",
+    "pytz",
+    "requests",
+    "tweepy[async]",
+]
+
+[dependency-groups]
+dev = [
+    "pytest",
+    "pytest-asyncio",
+    "ruff",
+]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+asyncio_mode = "auto"
+
+[tool.uv]
+exclude-newer = "14 days"
